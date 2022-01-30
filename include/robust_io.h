@@ -32,10 +32,11 @@ ssize_t rio_writen(int fd, void *buf, size_t n_bytes);
 #define RIO_BUFSIZE 128
 
 /*RIO struct buffer*/
-typedef struct rio_t{
-    int rio_fd; /*File descriptor of this internal buffer*/
-    int rio_count; /*Unreaded bytes in internal buffer*/
-    char *rio_bufptr; /*Pointer to the next unread byte*/
+typedef struct rio_t
+{
+    int rio_fd;                /*File descriptor of this internal buffer*/
+    int rio_count;             /*Unreaded bytes in internal buffer*/
+    char *rio_bufptr;          /*Pointer to the next unread byte*/
     char rio_buf[RIO_BUFSIZE]; /*Internal buffer*/
 } rio_t;
 
@@ -43,7 +44,7 @@ typedef struct rio_t{
     *Initialize a new RIO buffer.
     *This is the first thing you need to call if you are working with rio buffering functions
 */
-void init_rio_buf(rio_t * rio_ptr, int fd);
+void init_rio_buf(rio_t *rio_ptr, int fd);
 
 /*
     *This function reads up to n_bytes from the file descriptor `rp` points to.
@@ -56,6 +57,8 @@ ssize_t rio_read(rio_t *rp, void *usr_buf, size_t n_bytes);
     *It will read up to n_bytes of the line that is returned and will stores it in usr_buf
 */
 ssize_t rio_readline(rio_t *rp, void *usr_buf, size_t n_bytes);
+
+ssize_t rio_writen(int fd, void *buf, size_t n_bytes);
 
 #pragma endregion
 
