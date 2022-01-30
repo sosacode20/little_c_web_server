@@ -7,4 +7,25 @@ Extract the file name from the route in 'file_name'
 */
 int get_file_name(char *file_name, char *output_name_buffer);
 
+/*
+Write a client error message to the socket
+*/
+void clienterror(int fd, char *cause, char *errnum, char *shortmsg, char *longmsg);
+
+/*
+Serve static file
+*/
+void serve_static(int fd, char *filename, int filesize);
+
+/*
+Serve directory
+*/
+void serve_dynamic(int fd, char *filename);
+
+/*
+Get file type
+*/
+void get_filetype(char *filename, char *filetype);
+
+char *read_file(char *filename);
 #endif
