@@ -4,6 +4,7 @@ int get_file_info(char *file_name, file_info *fi)
 {
     stats st;
     get_file_name(file_name, fi->name);
+
     int res = stat(file_name, &st);
     if (res == -1)
     {
@@ -27,10 +28,13 @@ int get_file_info(char *file_name, file_info *fi)
         file_type = "other";
         break;
     }
-    size_t size = strlen(file_type);
-    memcpy(fi->file_type, file_type, size);
-    fi->time_modified = (&st.st_mtime);
-    //Si se quisiera la fecha ya formateada en string se pudiera usar el siguiente metodo
-    // char *m_time = ctime(&st.st_mtime);
+    strcpy(fi->file_type, file_type);
+    // fi->time_modified = (&st.st_mtime);
+    // Si se quisiera la fecha ya formateada en string se pudiera usar el siguiente metodo
+    char *m_time = ctime(&st.st_mtime);
+    if (m_time[strlen(m_time) - 1] == '\n')
+        m_time[strlen(m_time) - 1] = '\0';
+    strcpy(fi->time_modified, m_time);
+    fi->size = st.st_size;
     return 0;
 }
