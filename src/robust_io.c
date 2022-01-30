@@ -56,58 +56,57 @@ void init_rio_buf(rio_t *rio_ptr, int fd)
 
 ssize_t rio_read(rio_t *rp, void *usr_buf, size_t n)
 {
-    size_t bytes_left = n;
-    char *usr_buf_ptr = usr_buf;
-    while (bytes_left > 0)
-    {
-        int rio_cnt = 0;
-        if ((rio_cnt = rp->rio_count) <= 0)
-        {
-            rio_cnt = rp->rio_count = read(rp->rio_fd, rp->rio_buf, RIO_BUFSIZE); //Rellenar el buffer
-            rp->rio_bufptr = rp->rio_buf;
-            if (rio_cnt < 0) //Un error
-            {
-                perror("Ocurrio un error en la lectura interna de RIO");
-                exit(rio_cnt);
-            }
-            if (rio_cnt == 0) //EOF
-                return n - bytes_left;
+    if (n == 0)
+        return 0;
+
+    while (rp->rio_count == 0)
+    { /* refill if buffer is empty */
+        ssize_t rc = read(rp->rio_fd, rp->rio_buf, sizeof(rp->rio_buf));
+        if (rc < 0)
+        {                       /* read() error */
+            if (errno == EINTR) /* interrupted by a signal */
+                continue;       /* no data was read, try again */
+            else
+                return -1; /* errno set by read(), give up */
         }
-        //TODO: Hacer un metodo propio de memcpy para no tener que cargar con la libreria 'string.h' entera
-        size_t min_len = rio_cnt < bytes_left ? rio_cnt : bytes_left;
-        memcpy(usr_buf_ptr, rp->rio_bufptr, min_len);
-        bytes_left -= min_len;
-        usr_buf_ptr += min_len;
-        rp->rio_bufptr += min_len;
-        rp->rio_count -= min_len;
+        if (rc == 0) /* EOF */
+            return 0;
+        rp->rio_bufptr = rp->rio_buf; /* read() success, buffer is filled */
+        rp->rio_count = rc;           /* 0 < rc <= sizeof(rp->rio_buf) */
     }
-    return n - bytes_left;
+
+    /* Copy min(n, rp->rio_count) bytes from internal buf to user buf */
+    size_t cnt = rp->rio_count; /* 0 < rp->rio_count */
+    if (n < cnt)                /* 0 < n */
+        cnt = n;
+    (void)memcpy(usr_buf, rp->rio_bufptr, cnt);
+    rp->rio_bufptr += cnt;
+    rp->rio_count -= cnt;
+
+    return cnt;
 }
 
 ssize_t rio_readline(rio_t *rp, void *usr_buf, size_t n_bytes)
 {
-    char *bufptr = usr_buf;
-    char c;
-    int n;
-    ssize_t b_readead;
-    for (n = 1; n < n_bytes; n++) //Gonna read n_bytes - 1 because we need to add the \0 character at the end
+    size_t n;
+    char *bufp = usr_buf;
+
+    for (n = 1; n < n_bytes; n++)
     {
-        if ((b_readead = rio_read(rp, &c, 1)) < 0) //Error
+        ssize_t rc = rio_read(rp, bufp, 1);
+        if (rc < 0)
+            return -1; /* errno set by read(), give up */
+        if (rc == 0)
         {
-            perror("Some error has happened while reading the line");
-            return b_readead;
+            if (n == 1)
+                return 0; /* EOF, no data read */
+            else
+                break; /* EOF, some data was read */
         }
-        else if (b_readead == 0) //EOF
-        {
-            if (n == 1) //Nothing was read
-                return 0;
-            //Something was read
+        if (*bufp++ == '\n') /* read() success, 0 < rc <= 1 */
             break;
-        }
-        else if (c == '\n')
-            break;
-        *bufptr++ = c; //Si el caracter se leyo satisfactoriamente entonces copialo
     }
-    *bufptr = '\0';
-    return n - 1;
+    *bufp = '\0';
+
+    return n;
 }
