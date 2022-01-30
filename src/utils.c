@@ -1,7 +1,6 @@
 #include "utils.h"
 #include "meta.h"
 #include "robust_io.h"
-#include "templates.h"
 
 int get_file_name(char *file_name, char *output_name_buffer)
 {
