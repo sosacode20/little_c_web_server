@@ -13,11 +13,13 @@
 #endif
 typedef struct stat stats;
 
-typedef struct file_info {
+typedef struct file_info
+{
     char name[128];
     char file_type[32];
-    struct tm *time_modified;
-    // char time_modified[128];
+    int size;
+    // struct tm *time_modified;
+    char time_modified[128];
 } file_info;
 
 /*
