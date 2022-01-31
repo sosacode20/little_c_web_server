@@ -28,4 +28,7 @@ Get file type
 void get_filetype(char *filename, char *filetype);
 
 char *read_file(char *filename);
+
+void clear_spaces(char *string, char *newstring);
+
 #endif

@@ -105,14 +105,17 @@ void serve(int fd)
     }
     read_requesthdrs(&rio);
 
+    char clean_uri[MAXLINE];
+    clear_spaces(uri, clean_uri);
+    printf("URI: %s - Clean URI: %s\n", uri, clean_uri);
     strcpy(filename, WEBSERVER_ROOT);
-    strcat(filename, uri);
+    strcat(filename, clean_uri);
     is_directory = is_dir(filename);
 
     if (stat(filename, &sbuf) < 0)
     {
         clienterror(fd, filename, "404", "Not found",
-                    "Couldn’t find this file");
+                    "No se pudo encontrar el archivo");
         return;
     }
 
@@ -120,7 +123,7 @@ void serve(int fd)
     {
         if (!(S_ISREG(sbuf.st_mode)) || !(S_IRUSR & sbuf.st_mode))
         {
-            clienterror(fd, filename, "403", "Forbidden", "Couldn’t read the file");
+            clienterror(fd, filename, "403", "Forbidden", "No tiene permisos para leer el archivo");
             return;
         }
         serve_static(fd, filename, sbuf.st_size);

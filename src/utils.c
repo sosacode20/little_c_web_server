@@ -99,7 +99,7 @@ void serve_dynamic(int fd, char *filename)
 
     if (dr == NULL) // opendir returns NULL if couldn't open directory
     {
-        clienterror(fd, filename, "404", "Not Found", "Couldn't read directory");
+        clienterror(fd, filename, "404", "Not Found", "No se pudo abrir el directorio");
         return;
     }
 
@@ -164,4 +164,18 @@ char *read_file(char *filename)
     fread(buffer, 1, length, fp);
     fclose(fp);
     return buffer;
+}
+
+void clear_spaces(char *string, char *newstring)
+{
+    char *oldstring = malloc(strlen(string) * sizeof(char));
+    strcpy(oldstring, string);
+    char *token = strtok(oldstring, "%20");
+    while (token != NULL)
+    {
+        strcat(newstring, token);
+        strcat(newstring, " ");
+        token = strtok(NULL, "%20");
+    }
+    free(oldstring);
 }
