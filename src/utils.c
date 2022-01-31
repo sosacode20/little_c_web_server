@@ -2,6 +2,11 @@
 #include "meta.h"
 #include "robust_io.h"
 
+#define BOLD "\x1b[1m"
+#define RESET "\x1b[0m"
+#define BLUE "\x1b[34m" BOLD
+#define GREEN "\x1b[32m" BOLD
+
 int get_file_name(char *file_name, char *output_name_buffer)
 {
     size_t end_index = strlen(file_name) - 1;
@@ -168,14 +173,24 @@ char *read_file(char *filename)
 
 void clear_spaces(char *string, char *newstring)
 {
-    char *oldstring = malloc(strlen(string) * sizeof(char));
+    int size = strlen(string);
+    char *oldstring = malloc(size * sizeof(char));
+    char *startp_oldstring = oldstring;
     strcpy(oldstring, string);
-    char *token = strtok(oldstring, "%20");
-    while (token != NULL)
+    char *search = "%20";
+    char *ret;
+    while (ret = strstr(oldstring, search)) //Si encontro una coincidencia
     {
-        strcat(newstring, token);
+        int index = ret - oldstring;
+        oldstring[index] = 0;
+        strcat(newstring, oldstring);
         strcat(newstring, " ");
-        token = strtok(NULL, "%20");
+        oldstring += index + 3;
     }
-    free(oldstring);
+    int traveled = oldstring - startp_oldstring + 1;
+    if(traveled < size)
+    {
+        strcat(newstring, oldstring);
+    }
+    free(startp_oldstring);
 }
