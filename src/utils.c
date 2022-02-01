@@ -1,6 +1,7 @@
 #include "utils.h"
 #include "meta.h"
 #include "robust_io.h"
+#include "list.h"
 
 #define BOLD "\x1b[1m"
 #define RESET "\x1b[0m"
@@ -77,12 +78,18 @@ void serve_static(int fd, char *filename, int filesize)
 void serve_dynamic(int fd, char *filename)
 {
     char buf[MAXLINE], body[MAXBUF];
-
+    list lis;
+    create_list(&lis, MAXBUF);
+    char temp[MAXBUF];
     char *template = read_file("./template.html");
-    sprintf(body, "%s", template);
+    //TODO: Aumentar el tamano del buffer para body o hacer de body una lista que pueda crecer
+    long size_to_write = 0;
+    size_to_write += sprintf(temp, "%s", template);
     free(template);
-    sprintf(body, "%s<script>start(\"%s\")</script>\r\n", body, filename);
-    sprintf(body, "%s<script>onHasParentDirectory();</script>\r\n", body);
+    size_to_write += sprintf(temp, "%s<script>start(\"%s\")</script>\r\n", temp, filename);
+    size_to_write += sprintf(temp, "%s<script>onHasParentDirectory();</script>\r\n", temp);
+
+    add_chars_to_list(&lis, temp, size_to_write);
 
     struct dirent *de; // Pointer for directory entry
 
@@ -105,6 +112,7 @@ void serve_dynamic(int fd, char *filename)
         file_info fi;
         char file[MAXLINE];
         strcpy(file, filename);
+        strcat(file, "/");
         strcat(file, de->d_name);
 
         if (get_file_info(file, &fi) == 0)
@@ -114,8 +122,10 @@ void serve_dynamic(int fd, char *filename)
             {
                 is_dir = 1;
             }
-            sprintf(body, "%s<script>addRow(\"%s\", \"%s\", %d, %d, \"%d B\" , new Date(\"%s\").getTime(), \"%s\");</script>\r\n", body, fi.name, fi.name,
+            //TODO: Check if this work
+            size_to_write = sprintf(temp, "<script>addRow(\"%s\", \"%s\", %d, %d, \"%d B\" , new Date(\"%s\").getTime(), \"%s\");</script>\r\n", fi.name, fi.name,
                     is_dir, fi.size, fi.size, fi.time_modified, fi.time_modified);
+            add_chars_to_list(&lis, temp, size_to_write);
         }
         else
         {
@@ -128,9 +138,10 @@ void serve_dynamic(int fd, char *filename)
     rio_writen(fd, buf, strlen(buf));
     sprintf(buf, "Content-type: text/html\r\n");
     rio_writen(fd, buf, strlen(buf));
-    sprintf(buf, "Content-length: %d\r\n\r\n", (int)strlen(body));
+    sprintf(buf, "Content-length: %d\r\n\r\n", lis.length);
     rio_writen(fd, buf, strlen(buf));
-    rio_writen(fd, body, strlen(body));
+    rio_writen(fd, lis.buf, lis.length);
+    // printf("The content of the list is:\n"BLUE"%s\n"RESET,lis.buf);
 }
 
 char *read_file(char *filename)
